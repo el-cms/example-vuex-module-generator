@@ -16,21 +16,21 @@ const camelize = function (snakeText, capitalizeFirstLetter = true) {
   return out
 }
 
-export default function (endpoint, singular, plural, editable = true, destroyable = true) {
-  const lowCamelSingular = camelize(singular, false)
-  const lowCamelPlural = camelize(plural, false)
+const mutations = function (singular) {
+  const mutations = {}
+
+  mutations[`set_${singular}`] = (state, entity) => { Vue.set(state, entity.id, entity) }
+  mutations[`remove_${singular}`] = (state, id) => {Vue.delete(state, id)}
+
+  return mutations
+}
+
+const actions = function (endpoint, singular, plural, editable = true, destroyable = true) {
   const camelSingular = camelize(singular)
   const camelPlural = camelize(plural)
+  const actions = {}
 
-  // Empty module
-  const module = {state: {}, mutations: {}, actions: {}, getters: {}}
-
-  // Mutators:
-  module.mutations[`set_${singular}`] = (state, entity) => { Vue.set(state, entity.id, entity) }
-  module.mutations[`remove_${singular}`] = (state, id) => {Vue.delete(state, id)}
-
-  // Actions:
-  module.actions[`load${camelPlural}`] = ({commit}) => {
+  actions[`load${camelPlural}`] = ({commit}) => {
     api.get(endpoint)
       .then((data) => {
         for (let i = 0; i < data.length; i++) {
@@ -39,13 +39,13 @@ export default function (endpoint, singular, plural, editable = true, destroyabl
       })
       .catch((error) => {console.log(`ERROR in load${camelPlural}:`, error)})
   }
-  module.actions[`load${camelSingular}`] = ({commit}, id) => {
+  actions[`load${camelSingular}`] = ({commit}, id) => {
     api.get(`${endpoint}/${id}`)
       .then((data) => {commit(`set_${singular}`, data)})
       .catch((error) => {console.log(`ERROR in load${camelSingular}:`, error)})
   }
   if (editable) {
-    module.actions[`create${camelSingular}`] = ({commit}, payload) => {
+    actions[`create${camelSingular}`] = ({commit}, payload) => {
       api.post(endpoint, payload)
         .then((data) => {
           // Let's assume "data" is the new article, sent back by the API
@@ -54,7 +54,7 @@ export default function (endpoint, singular, plural, editable = true, destroyabl
         })
         .catch((error) => {console.log(`ERROR in create${camelSingular}:`, error)})
     }
-    module.actions[`update${camelSingular}`] = ({commit}, payload) => {
+    actions[`update${camelSingular}`] = ({commit}, payload) => {
       api.patch(`${endpoint}/${payload.id}`, payload)
         .then((data) => {
           // Let's assume "data" is the updated article
@@ -64,16 +64,38 @@ export default function (endpoint, singular, plural, editable = true, destroyabl
     }
   }
   if (destroyable) {
-    module.actions[`destroy${camelSingular}`] = ({commit}, id) => {
+    actions[`destroy${camelSingular}`] = ({commit}, id) => {
       api.delete(`${endpoint}/${id}`)
         .then(() => { commit(`remove_${singular}`, id) })
         .catch((error) => {console.log('ERROR in DESTROY_ARTICLE:', error)})
     }
   }
 
-  // Getters
-  module.getters[lowCamelPlural] = state => state
-  module.getters[lowCamelSingular] = state => id => state[id] || undefined
+  return actions
+}
+
+const getters = function (singular, plural) {
+  const lowCamelSingular = camelize(singular, false)
+  const lowCamelPlural = camelize(plural, false)
+
+  const getters = {}
+
+  getters[lowCamelPlural] = state => state
+  getters[lowCamelSingular] = state => id => state[id] || undefined
+
+  return getters
+}
+
+export default function (endpoint, singular, plural, editable = true, destroyable = true) {
+  const module = {
+    state: {}, mutations: {
+      ...mutations(singular),
+    }, actions: {
+      ...actions(endpoint, singular, plural, editable, destroyable),
+    }, getters: {
+      ...getters(singular, plural),
+    },
+  }
 
   return module
 }
