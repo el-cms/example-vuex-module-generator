@@ -1,6 +1,6 @@
 import Vue from 'vue'
 import Vuex from 'vuex'
-import moduleGenerator from './modulator'
+import Modulator from './modulator'
 
 Vue.use(Vuex)
 
@@ -9,8 +9,8 @@ export default new Vuex.Store({
   mutations: {},
   actions: {},
   modules: {
-    users: moduleGenerator('users', 'user', 'users', true, false),
-    posts: moduleGenerator('posts', 'post', 'posts'),
-    postTypes: moduleGenerator('post_types', 'post_type', 'post_types'),
+    users: Modulator.generateModule('users', 'user', 'users', true, false),
+    posts: Modulator.generateModule('posts', 'post', 'posts'),
+    postTypes: Modulator.generateModule('post_types', 'post_type', 'post_types'),
   }
 })
