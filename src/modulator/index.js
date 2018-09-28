@@ -1,20 +1,6 @@
 // We need Vue to ensure proper updates in mutations
 import Vue from 'vue'
-
-const camelize = function (snakeText, capitalizeFirstLetter = true) {
-  let regexp = /(_\w)/g
-  if (capitalizeFirstLetter) {
-    regexp = /(^\w|_\w)/g
-  }
-  const out = snakeText.replace(regexp, (match) => {
-    if (match.length > 1) {
-      return match[1].toUpperCase()
-    } else {
-      return match.toUpperCase()
-    }
-  })
-  return out
-}
+import utils from '../utils'
 
 export default {
   mutations (singular) {
@@ -26,8 +12,8 @@ export default {
     return mutations
   },
   actions (endpoint, singular, plural, editable = true, destroyable = true) {
-    const camelSingular = camelize(singular)
-    const camelPlural = camelize(plural)
+    const camelSingular = utils.camelize(singular)
+    const camelPlural = utils.camelize(plural)
     const actions = {}
 
     actions[`load${camelPlural}`] = ({commit}) => {
@@ -74,8 +60,8 @@ export default {
     return actions
   },
   getters (singular, plural) {
-    const lowCamelSingular = camelize(singular, false)
-    const lowCamelPlural = camelize(plural, false)
+    const lowCamelSingular = utils.camelize(singular, false)
+    const lowCamelPlural = utils.camelize(plural, false)
 
     const getters = {}
 
@@ -89,9 +75,11 @@ export default {
       state: {},
       mutations: {
         ...this.mutations(singular),
-      }, actions: {
+      },
+      actions: {
         ...this.actions(endpoint, singular, plural, editable, destroyable),
-      }, getters: {
+      },
+      getters: {
         ...this.getters(singular, plural),
       },
     }
