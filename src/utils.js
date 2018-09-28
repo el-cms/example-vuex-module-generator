@@ -22,4 +22,24 @@ export default {
     if (this.isObject(object)) { return Object.prototype.hasOwnProperty.call(object, property) }
     return false
   },
+
+  // Filters object keys with a callback testing its value
+  filterObject (obj, test, first = false) {
+    if (obj !== null && typeof obj === 'object') {
+      const results = {}
+      for (const key in obj) {
+        if (obj.hasOwnProperty(key)) {
+          if (test(obj[key], key)) {
+            if (first) {
+              return obj[key]
+            }
+            results[key] = obj[key]
+          }
+        }
+      }
+      return results
+    }
+
+    throw new Error('The thing you try to filter is not an object.')
+  },
 }

@@ -1,6 +1,7 @@
 // We need Vue to ensure proper updates in mutations
 import Vue from 'vue'
 import utils from '../utils'
+import findAndDispatchEntities from '../data_types'
 
 export default {
   mutations (singular) {
@@ -16,35 +17,44 @@ export default {
     const camelPlural = utils.camelize(plural)
     const actions = {}
 
-    actions[`load${camelPlural}`] = ({commit}) => {
+    actions[`dispatchAndCommit${camelSingular}`] = ({commit, dispatch}, entity) => {
+      findAndDispatchEntities(entity, dispatch, singular)
+        .then((cleanEntity) => {
+          // Commit the cleaned entity: all the fields where removed by findAndDispatchEntities
+          commit(`set_${singular}`, cleanEntity)
+        })
+        .catch((error) => {console.log('An error occurred while processing data')})
+    }
+
+    actions[`load${camelPlural}`] = ({dispatch}) => {
       api.get(endpoint)
         .then((data) => {
           for (let i = 0; i < data.length; i++) {
-            commit(`set_${singular}`, data[i])
+            dispatch(`dispatchAndCommit${camelSingular}`, data[i])
           }
         })
         .catch((error) => {console.log(`ERROR in load${camelPlural}:`, error)})
     }
-    actions[`load${camelSingular}`] = ({commit}, id) => {
+    actions[`load${camelSingular}`] = ({dispatch}, id) => {
       api.get(`${endpoint}/${id}`)
-        .then((data) => {commit(`set_${singular}`, data)})
+        .then((data) => {dispatch(`dispatchAndCommit${camelSingular}`, data)})
         .catch((error) => {console.log(`ERROR in load${camelSingular}:`, error)})
     }
     if (editable) {
-      actions[`create${camelSingular}`] = ({commit}, payload) => {
+      actions[`create${camelSingular}`] = ({dispatch}, payload) => {
         api.post(endpoint, payload)
           .then((data) => {
             // Let's assume "data" is the new article, sent back by the API
             // We don't want to store the user input in our store :)
-            commit(`set_${singular}`, data)
+            dispatch(`dispatchAndCommit${camelSingular}`, data)
           })
           .catch((error) => {console.log(`ERROR in create${camelSingular}:`, error)})
       }
-      actions[`update${camelSingular}`] = ({commit}, payload) => {
+      actions[`update${camelSingular}`] = ({dispatch}, payload) => {
         api.patch(`${endpoint}/${payload.id}`, payload)
           .then((data) => {
             // Let's assume "data" is the updated article
-            commit(`set_${singular}`, data)
+            dispatch(`dispatchAndCommit${camelSingular}`, data)
           })
           .catch((error) => {console.log(`ERROR in update${camelSingular}:`, error)})
       }
@@ -67,6 +77,9 @@ export default {
 
     getters[lowCamelPlural] = state => state
     getters[lowCamelSingular] = state => id => state[id] || undefined
+    getters[`${lowCamelSingular}Related`] = (state, rootState) => (type, id) => {
+      return utils.filterObject(rootState[type], (entity) => entity[`${singular}_id`] === id) || undefined
+    }
 
     return getters
   },
