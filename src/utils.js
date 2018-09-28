@@ -13,4 +13,13 @@ export default {
     })
     return out
   },
+
+  // Return true if the given value is an object
+  isObject (object) { return object !== null && typeof object === 'object'},
+
+  // Return true if the given object has the given key
+  objectHasKey (object, property) {
+    if (this.isObject(object)) { return Object.prototype.hasOwnProperty.call(object, property) }
+    return false
+  },
 }
