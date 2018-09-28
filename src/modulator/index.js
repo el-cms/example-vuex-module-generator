@@ -1,6 +1,7 @@
 // We need Vue to ensure proper updates in mutations
 import Vue from 'vue'
 import utils from '../utils'
+import api from '../fake-api'
 import findAndDispatchEntities from '../data_types'
 
 export default {
